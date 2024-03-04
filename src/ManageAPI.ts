@@ -30,10 +30,10 @@ import { CWLogger, RetryOptions } from './types'
  * Manage patch operation input object, usually passed in an array of operations
  */
 export type PatchOperation = {
-  op: 'add' | 'replace' | 'remove'
-  path: string
-  value: unknown
-}
+  op?: string;
+  path?: string;
+  value?: string | { [key: string]: unknown };
+};
 
 /**
  * @public
