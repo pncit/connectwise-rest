@@ -109,6 +109,11 @@ export interface CWMOptions {
    * Enable debug output.  Defaults to false.
    */
   debug?: boolean
+  /**
+   * Enable passing a custom axios response interceptor
+   * ```
+   */
+  requestErrorHandler?: (error: any) => void
 }
 
 /**

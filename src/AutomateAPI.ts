@@ -55,6 +55,7 @@ export type CWAOptions = {
   retryOptions?: RetryOptions
   logger?: CWLogger
   debug?: boolean
+  requestErrorHandler?: (error: any) => void
 }
 
 /**

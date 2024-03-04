@@ -57,6 +57,13 @@ export interface AutomateConfig extends CWAOptions {
 export default class Automate {
   config: AutomateConfig
   private instance: AxiosInstance
+  private api: ({
+    path,
+    method,
+    params,
+    data,
+  }: RequestOptions) => Promise<ErrorResponse | DataResponse >
+    
   /**
    * @public
    */
@@ -91,6 +98,7 @@ export default class Automate {
     retryOptions = DEFAULTS.retryOptions,
     logger,
     debug,
+    requestErrorHandler,
   }: CWAOptions) {
     if (token && username && password) {
       throw new Error(
@@ -126,6 +134,7 @@ export default class Automate {
       this.createAxiosInstance()
     }
 
+    this.api = this.makeApi(requestErrorHandler)
     this.request = makeRequest({ config: this.config, api: this.api, thisObj: this })
     this.paginate = makePaginate({ thisObj: this })
   }
@@ -170,39 +179,44 @@ export default class Automate {
   /**
    * @internal
    */
-  private async api({
-    path,
-    method,
-    params,
-    data,
-  }: RequestOptions): Promise<ErrorResponse | DataResponse> {
-    const { username, password, serverUrl, twoFactorPasscode } = this.config
-    if (!this.config.token || !this.instance) {
-      const result = await Automate.getToken({ username, password, serverUrl, twoFactorPasscode })
-      this.config.token = result.AccessToken
-      this.createAxiosInstance()
-    }
-
-    try {
-      const result = await this.instance({
-        url: path,
-        method,
-        params,
-        data,
-      })
-
-      return result?.data
-    } catch (error: any) {
-      if (error.isAxiosError) {
-        throw {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error?.message,
-        }
+  private makeApi = (requestErrorHandler?: (err: any) => any): any => {
+    return async ({
+      path,
+      method,
+      params,
+      data,
+    }: RequestOptions): Promise<ErrorResponse | DataResponse> => {
+      const { username, password, serverUrl, twoFactorPasscode } = this.config
+      if (!this.config.token || !this.instance) {
+        const result = await Automate.getToken({ username, password, serverUrl, twoFactorPasscode })
+        this.config.token = result.AccessToken
+        this.createAxiosInstance()
       }
 
-      // something else catastrophic went wrong
-      throw error
+      try {
+        const result = await this.instance({
+          url: path,
+          method,
+          params,
+          data,
+        })
+
+        return result?.data
+      } catch (error: any) {
+        if (requestErrorHandler) {
+          return requestErrorHandler(error)
+        }
+        if (error.isAxiosError) {
+          throw {
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error?.message,
+          }
+        }
+
+        // something else catastrophic went wrong
+        throw error
+      }
     }
   }
 

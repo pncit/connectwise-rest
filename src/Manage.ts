@@ -72,6 +72,12 @@ export interface ManageConfig extends CWMOptions {
 export default class Manage {
   config: ManageConfig
   private instance: AxiosInstance
+  private api: ({
+    path,
+    method,
+    params,
+    data,
+  }: RequestOptions) => Promise<ErrorResponse | DataResponse>
 
   /**
    * @public
@@ -108,11 +114,11 @@ export default class Manage {
     retryOptions = DEFAULTS.retryOptions,
     logger,
     debug = false,
+    requestErrorHandler,
   }: CWMOptions) {
     if (!companyId || !publicKey || !privateKey || !companyUrl || !clientId) {
       throw new Error('Missing options [companyId, publicKey, privateKey, companyUrl, clientId]')
     }
-
     this.config = {
       companyId,
       publicKey,
@@ -165,6 +171,7 @@ export default class Manage {
       return config
     })
 
+    this.api = this.makeApi(requestErrorHandler)
     this.request = makeRequest({ config: this.config, api: this.api, thisObj: this })
     this.paginate = makePaginate({ thisObj: this })
   }
@@ -172,32 +179,38 @@ export default class Manage {
   /**
    * @internal
    */
-  private async api({
-    path,
-    method,
-    params,
-    data,
-  }: RequestOptions): Promise<ErrorResponse | DataResponse> {
-    try {
-      const result = await this.instance({
-        url: path,
-        method,
-        params,
-        data,
-      })
+  private makeApi = (requestErrorHandler?: (err: any) => any): any => {
+    return async ({
+      path,
+      method,
+      params,
+      data,
+    }: RequestOptions): Promise<ErrorResponse | DataResponse> => {
+      //try {
+      try {
+        const result = await this.instance({
+          url: path,
+          method,
+          params,
+          data,
+        })
 
-      return result?.data
-    } catch (error: any) {
-      if (error.isAxiosError) {
-        throw {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error?.message,
+        return result?.data
+      } catch (error: any) {
+        if (requestErrorHandler) {
+          return requestErrorHandler(error)
         }
-      }
+        if (error.isAxiosError) {
+          throw {
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error?.message,
+          }
+        }
 
-      // something else catastrophic went wrong
-      throw error
+        // something else catastrophic went wrong
+        throw error
+      }
     }
   }
 }
