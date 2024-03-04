@@ -42,7 +42,6 @@ export const makeRequest =
           logger(
             'error',
             `${method} ${path} ${Date.now() - startTime}ms params=${JSON.stringify(params)}`,
-            error,
           )
           throw error
         })
@@ -76,7 +75,6 @@ export const makeRequest =
             `${method} ${path} ${Date.now() - startTime}ms error occurred: ${
               error.code
             }, params=${JSON.stringify(params)}`,
-            error,
           )
           throw error
         })
