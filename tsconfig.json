@@ -5,6 +5,7 @@
   ],
   "exclude": ["scripts"],
   "compilerOptions": {
+    "types": ["node"],
     "baseUrl": "./src",
     "declaration": true,
     "declarationMap": true,
