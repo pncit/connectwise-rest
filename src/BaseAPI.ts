@@ -143,7 +143,7 @@ export const makePaginate =
  */
 function getPage(
   apiMethod: PaginationApiMethod,
-  methodArgs: Record<string, unknown>[],
+  methodArgs: (Record<string, unknown> | number)[],
   thisObj: InstanceType<typeof Automate | typeof Manage>,
   page = 1,
   pageSize = 1000,
@@ -161,7 +161,22 @@ function getPage(
   // look for CommonParams and inject page and pageSize
   // check for apiMethod function args length
   // get last arg
-  const commonParams = <CommonParameters>methodArgs.pop()
+  const commonParams = <CommonParameters & {id?: number, parentId?: number, grandparentId?: number}>methodArgs.pop()
+  if (commonParams.id !== undefined) {
+    const id = commonParams.id;
+    delete commonParams.id;
+    methodArgs.push(id);
+  }
+  if (commonParams.parentId !== undefined) {
+    const parentId = commonParams.parentId;
+    delete commonParams.parentId;
+    methodArgs.push(parentId);
+  }
+  if (commonParams.grandparentId !== undefined) {
+    const grandparentId = commonParams.grandparentId;
+    delete commonParams.grandparentId;
+    methodArgs.push(grandparentId);
+  }
   commonParams.page = page
   commonParams.pageSize = pageSize
 
